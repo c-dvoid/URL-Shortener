@@ -1,11 +1,12 @@
-
 # URL Shortener
+
 Простой сервис для сокращения ссылок с генерацией коротких URL.  
 Используется PostgreSQL для хранения данных с поддержкой TTL (автоматическое удаление истёкших ссылок).
 
 ---
 
 ## Функционал
+
 - Создание короткой ссылки (POST `/short_url`)
 - Редирект по короткой ссылке (GET `/{slug}`)
 - Автоматическое истечение ссылок через заданное количество дней
@@ -13,12 +14,43 @@
 ---
 
 ## Требования
+
 - Python 3.14+
 - PostgreSQL 18+
+- FastAPI 0.128+
+- SQLAlchemy 2.0+
+- Docker и Docker Compose
 
 ---
 
-## Установка и запуск
+## Запуск через Docker (рекомендуется)
+
+1. Клонируем репозиторий:
+```bash
+git clone https://github.com/c-dvoid/url-shortener.git
+cd URL-Shortener
+```
+
+2. Создаём `.env` файл на основе примера:
+```bash
+# Linux / Mac
+cp .env.example .env
+# Windows
+copy .env.example .env
+```
+
+3. При необходимости редактируем переменные в `.env`
+
+4. Запускаем:
+```bash
+docker compose up --build
+```
+
+Приложение будет доступно на `http://localhost:8000`
+
+---
+
+## Локальный запуск (без Docker)
 
 1. Клонируем репозиторий:
 ```bash
@@ -36,12 +68,11 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Создаём файл `.env` в корне проекта:
-```env
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/url_shortener
-```
+3. Создаём `.env` файл и заполняем переменные (см. `.env.example`)
 
 4. Запускаем приложение:
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Приложение будет доступно на `http://localhost:8000`
