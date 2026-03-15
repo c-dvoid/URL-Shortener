@@ -19,6 +19,7 @@
 - PostgreSQL 18+
 - FastAPI 0.128+
 - SQLAlchemy 2.0+
+- Alembic 1.0+
 - Docker и Docker Compose
 
 ---
@@ -70,7 +71,12 @@ pip install -r requirements.txt
 
 3. Создаём `.env` файл и заполняем переменные (см. `.env.example`)
 
-4. Запускаем приложение:
+4. Применяем миграции:
+```bash
+alembic upgrade head
+```
+
+5. Запускаем приложение:
 ```bash
 uvicorn app.main:app --reload
 ```
