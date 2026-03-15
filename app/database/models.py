@@ -26,11 +26,6 @@ class URL(Base):
 
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=default_expiry,
         nullable=False,
         index=True
     )
-
-    @property
-    def is_expired(self) -> bool:
-        return datetime.now(timezone.utc) > self.expires_at
