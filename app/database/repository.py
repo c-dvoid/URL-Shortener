@@ -1,5 +1,5 @@
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from datetime import datetime, timezone, timedelta
 
 from .db import new_session
@@ -22,6 +22,13 @@ async def add_slug_to_database(
         await session.commit() 
 
 
+async def is_slug_exists(slug: str) -> bool:
+    async with new_session() as session:
+        url = await session.scalar(
+            select(URL).where(URL.slug == slug)
+        )
+        return url is not None
+
 async def get_original_url_by_slug(slug: str) -> URL | None:
     async with new_session() as session:
         url = await session.scalar(
@@ -40,3 +47,14 @@ async def delete_expired_urls():
             delete(URL).where(URL.expires_at < datetime.now(timezone.utc))
         )
         await session.commit()
+
+
+async def increment_clicks(slug: str):
+    async with new_session() as session:
+        await session.execute(
+            update(URL)
+            .where(URL.slug == slug)
+            .values(clicks=URL.clicks + 1)
+        )
+        await session.commit()
+

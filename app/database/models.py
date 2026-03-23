@@ -1,15 +1,10 @@
 
 from sqlalchemy import Integer, String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from datetime import datetime, timezone, timedelta
-
-from config import TTL_DAYS
+from datetime import datetime
 
 class Base(DeclarativeBase):
     pass
-
-def default_expiry():
-    return datetime.now(timezone.utc) + timedelta(days=TTL_DAYS)
 
 class URL(Base):
     __tablename__ = "urls"
@@ -29,3 +24,5 @@ class URL(Base):
         nullable=False,
         index=True
     )
+
+    clicks: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
