@@ -22,12 +22,21 @@ async def add_slug_to_database(
         await session.commit() 
 
 
-async def is_slug_exists(slug: str) -> bool:
+async def slug_exists(slug: str) -> bool:
     async with new_session() as session:
         url = await session.scalar(
             select(URL).where(URL.slug == slug)
         )
         return url is not None
+
+
+async def original_url_exists(original_url: str) -> bool:
+    async with new_session() as session:
+        url = await session.scalar(
+            select(URL).where(URL.original_url == original_url)
+        )
+        return url is not None
+
 
 async def get_original_url_by_slug(slug: str) -> URL | None:
     async with new_session() as session:
@@ -39,6 +48,16 @@ async def get_original_url_by_slug(slug: str) -> URL | None:
         )
         
         return url
+    
+
+async def get_url_by_original(original_url: str) -> URL | None:
+    async with new_session() as session:
+        return await session.scalar(
+            select(URL).where(
+                URL.original_url == original_url,
+                URL.expires_at > datetime.now(timezone.utc)
+            )
+        )
     
 
 async def delete_expired_urls():

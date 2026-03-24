@@ -4,8 +4,10 @@ import asyncio
 from .shortener import generate_slug
 from app.database.repository import (
     add_slug_to_database,
-    is_slug_exists,
+    slug_exists,
+    original_url_exists,
     get_original_url_by_slug,
+    get_url_by_original,
     delete_expired_urls,
     increment_clicks
 )
@@ -17,14 +19,21 @@ async def generate_url(
         custom_slug: str | None = None,
         ttl_days: int = TTL_DAYS
 ) -> str:
+    
     if custom_slug:
-        if await is_slug_exists(custom_slug):
+        if await slug_exists(custom_slug):
             raise ValueError("Custom slug already exists")
         await add_slug_to_database(custom_slug, original_url, ttl_days)
         return custom_slug
+    
+    if await original_url_exists(original_url):
+        url = await get_url_by_original(original_url)
+        return url.slug
+    
+    
     while True:
         slug = generate_slug()
-        if not await is_slug_exists(slug):
+        if not await slug_exists(slug):
             await add_slug_to_database(slug, original_url, ttl_days)
             return slug
 
@@ -37,6 +46,9 @@ async def get_url_by_slug(slug: str) -> URL | None:
 async def info_by_slug(slug: str) -> URL | None:
     return await get_original_url_by_slug(slug)
 
+async def info_by_url(url: str) -> URL | None:
+    return await get_url_by_original(url)
+
 async def start_cleanup():
     await delete_expired_urls()
 
@@ -45,5 +57,4 @@ async def cleanup_worker():
     while True:
         await asyncio.sleep(3600)
         await start_cleanup()
-    
     

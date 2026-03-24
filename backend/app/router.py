@@ -6,7 +6,8 @@ from .schemas import URLCreate, URLResponse, URLInfo
 from .service import (
     generate_url,
     get_url_by_slug,
-    info_by_slug
+    info_by_slug,
+    info_by_url
 )
 
 router = APIRouter()
@@ -21,6 +22,14 @@ async def create_short_url(url_data: URLCreate):
     except ValueError:
         raise HTTPException(status_code=409, detail="Custom slug already exists")
     return {"slug": slug, "original_url": str(url_data.url)}
+
+
+@router.get("/info", response_model=URLInfo)
+async def get_info_by_url(url: str):
+    link = await info_by_url(url)
+    if link is None:
+        raise HTTPException(status_code=404, detail="URL not found")
+    return link
 
 
 @router.get("/info/{slug}", response_model=URLInfo)

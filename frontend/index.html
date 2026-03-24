@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL-Shortener</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style> * { font-family: 'DM Mono', monospace; } </style>
+</head>
+<body class="bg-white text-black min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md">
+
+    <h1 class="text-2xl font-medium mb-8 tracking-tight">url shortener</h1>
+
+    <input id="url" type="url" placeholder="https://example.com"
+      class="w-full border border-black px-4 py-3 text-sm outline-none mb-3 placeholder-gray-300" />
+
+    <div class="flex gap-2 mb-3">
+      <button id="btn-random" onclick="setMode('random')"
+        class="flex-1 py-3 text-xs tracking-widest uppercase border border-black bg-black text-white transition-colors">
+        случайный
+      </button>
+      <button id="btn-custom" onclick="setMode('custom')"
+        class="flex-1 py-3 text-xs tracking-widest uppercase border border-gray-200 text-gray-400 transition-colors">
+        свой slug
+      </button>
+    </div>
+
+    <input id="slug" type="text" placeholder="введите slug"
+      class="w-full border border-gray-200 px-4 py-3 text-sm outline-none mb-3 placeholder-gray-300 hidden" />
+
+    <p id="error" class="text-red-600 text-xs mb-3 hidden"></p>
+
+    <button onclick="submit()"
+      class="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:opacity-70 transition-opacity">
+      Сократить
+    </button>
+
+    <div id="result" class="hidden mt-8 border-t border-gray-100 pt-6">
+
+      <p class="text-xs text-gray-400 tracking-widest uppercase mb-4">последняя ссылка</p>
+
+      <div class="flex items-center justify-between mb-6">
+        <span id="short-url" class="text-lg font-medium"></span>
+        <button onclick="copy()" id="copy-btn"
+          class="text-xs border border-gray-200 px-3 py-1.5 hover:bg-gray-50 transition-colors">
+          копировать
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 text-xs">
+        <div>
+          <p class="text-gray-400 mb-1">переходы</p>
+          <p id="clicks" class="font-medium">—</p>
+        </div>
+        <div>
+          <p class="text-gray-400 mb-1">создана</p>
+          <p id="created" class="font-medium">—</p>
+        </div>
+        <div>
+          <p class="text-gray-400 mb-1">истекает</p>
+          <p id="expires" class="font-medium">—</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+const API = '/api'
+let currentSlug = null
+let mode = 'random'
+
+function setMode(m) {
+    mode = m
+    const slugInput = document.getElementById('slug')
+    const btnRandom = document.getElementById('btn-random')
+    const btnCustom = document.getElementById('btn-custom')
+
+    if (m === 'custom') {
+        slugInput.classList.remove('hidden')
+        btnCustom.classList.add('bg-black', 'text-white', 'border-black')
+        btnCustom.classList.remove('text-gray-400', 'border-gray-200')
+        btnRandom.classList.remove('bg-black', 'text-white', 'border-black')
+        btnRandom.classList.add('text-gray-400', 'border-gray-200')
+    } else {
+        slugInput.classList.add('hidden')
+        slugInput.value = ''
+        btnRandom.classList.add('bg-black', 'text-white', 'border-black')
+        btnRandom.classList.remove('text-gray-400', 'border-gray-200')
+        btnCustom.classList.remove('bg-black', 'text-white', 'border-black')
+        btnCustom.classList.add('text-gray-400', 'border-gray-200')
+    }
+}
+
+async function submit() {
+    const url = document.getElementById('url').value.trim()
+    const slug = document.getElementById('slug').value.trim()
+    if (!url) return
+
+    hideError()
+
+    try {
+        const body = { url }
+        if (mode === 'custom' && slug) body.custom_slug = slug
+
+        const res = await fetch(`${API}/short_url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        })
+
+        const data = await res.json()
+        if (!res.ok) return showError(data.detail || 'Ошибка')
+
+        currentSlug = data.slug
+        localStorage.setItem('lastSlug', currentSlug)
+        await loadStats(currentSlug)
+
+    } catch {
+        showError('Не удалось подключиться к серверу')
+    }
+}
+
+async function loadStats(slug) {
+    const res = await fetch(`${API}/info/${slug}`)
+    if (!res.ok) return
+    const d = await res.json()
+    document.getElementById('short-url').textContent = `${window.location.origin}/${slug}`
+    document.getElementById('clicks').textContent = d.clicks
+    document.getElementById('created').textContent = d.created_at
+    document.getElementById('expires').textContent = d.expires_at
+    document.getElementById('result').classList.remove('hidden')
+}
+
+async function copy() {
+    const url = document.getElementById('short-url').textContent
+    await navigator.clipboard.writeText(url)
+    const btn = document.getElementById('copy-btn')
+    btn.textContent = 'скопировано'
+    setTimeout(() => btn.textContent = 'копировать', 1500)
+}
+
+function showError(msg) {
+    const el = document.getElementById('error')
+    el.textContent = msg
+    el.classList.remove('hidden')
+}
+
+function hideError() {
+    document.getElementById('error').classList.add('hidden')
+}
+
+const saved = localStorage.getItem('lastSlug')
+if (saved) {
+    currentSlug = saved
+    loadStats(currentSlug)
+}
+</script>
+</body>
+</html>
